@@ -146,6 +146,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		$labelSQL = "mobile_model";
 		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
 		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
+		$tableProvider->filter('ColumnCallbackDeleteRow', array('label', 'strlen'));
 		$columnToSortByBeforeTruncation = Piwik_Archive::INDEX_NB_VISITS;
 		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
 		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
@@ -156,6 +157,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		$labelSQL = "mobile_brand";
 		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
 		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
+		$tableProvider->filter('ColumnCallbackDeleteRow', array('label', 'strlen'));
 		$columnToSortByBeforeTruncation = Piwik_Archive::INDEX_NB_VISITS;
 		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
 		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
@@ -182,10 +184,17 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		$visitorInfo =& $notification->getNotificationObject();
 		try {
 			$this->initTeraWurfl();
-			$visitorInfo['mobile'] = $this->wurflObj->getDeviceCapability('is_wireless_device')? 1: 0;
-			$visitorInfo['mobile_brand'] = $this->wurflObj->getDeviceCapability('brand_name');
-			$visitorInfo['mobile_model'] = $visitorInfo['mobile_brand'] . ' ' . $this->wurflObj->getDeviceCapability('model_name');
-			$visitorInfo['mobile_id'] = $this->wurflObj->capabilities['id'];
+			if($this->wurflObj->getDeviceCapability('is_wireless_device')){
+				$visitorInfo['mobile'] = 1;
+				$visitorInfo['mobile_brand'] = trim($this->wurflObj->getDeviceCapability('brand_name'));
+				$visitorInfo['mobile_model'] = trim($visitorInfo['mobile_brand'] . ' ' . $this->wurflObj->getDeviceCapability('model_name'));
+				$visitorInfo['mobile_id'] = $this->wurflObj->capabilities['id'];
+			}else{
+				$visitorInfo['mobile'] = 0;
+				$visitorInfo['mobile_brand'] = null;
+				$visitorInfo['mobile_model'] = null;
+				$visitorInfo['mobile_id'] = $this->wurflObj->capabilities['id'];
+			}
 		}catch(Exception $e){
 			error_log($e->getMessage());
 		}

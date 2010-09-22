@@ -102,7 +102,7 @@ class Piwik_MobileAnalytics_Controller extends Piwik_Controller {
 		$this->setPeriodVariablesView($view);
 		$column = 'nb_visits';
 		$view->setColumnsToDisplay( array('label',$column) );
-		$view->setColumnTranslation('label', 'Mobile Device');
+		$view->setColumnTranslation('label', 'Model Name');
 		$view->setSortedColumn( $column	 );
 		$view->setLimit( 20 );
 		return $this->renderView($view, $fetch);
@@ -113,7 +113,7 @@ class Piwik_MobileAnalytics_Controller extends Piwik_Controller {
 		$this->setPeriodVariablesView($view);
 		$column = 'nb_visits';
 		$view->setColumnsToDisplay( array('label',$column) );
-		$view->setColumnTranslation('label', 'Mobile Device Brand Name');
+		$view->setColumnTranslation('label', 'Brand Name');
 		$view->setSortedColumn( $column	 );
 		$view->setLimit( 20 );
 		return $this->renderView($view, $fetch);
