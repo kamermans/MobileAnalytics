@@ -141,7 +141,6 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	function archiveDay($notification){
 		$archiveProcessing = $notification->getNotificationObject();
 		// Devices by Name
-		// FIXME: Filter this data, removing all rows where `mobile`=0
 		$recordName = 'MobileAnalytics_mobileDevices';
 		$labelSQL = "mobile_model";
 		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
@@ -152,7 +151,6 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
 		destroy($tableProvider);
 		// Devices by Brand
-		// FIXME: Filter this data, removing all rows where `mobile`=0
 		$recordName = 'MobileAnalytics_mobileBrands';
 		$labelSQL = "mobile_brand";
 		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
