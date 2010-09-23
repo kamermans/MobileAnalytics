@@ -110,7 +110,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	}
 	
 	function addAdminMenu(){
-		Piwik_AddAdminMenu('Moblie Analytics', 
+		Piwik_AddAdminMenu('Mobile Analytics', 
 							array('module' => 'MobileAnalytics', 'action' => 'adminMenu'),
 							Piwik::isUserIsSuperUser(),
 							$order = 30);
