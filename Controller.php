@@ -21,6 +21,12 @@ class Piwik_MobileAnalytics_Controller extends Piwik_Controller {
 		$view->report_by_mobile = $this->getDeviceMobile(true);
 		$view->report_by_model  = $this->getDeviceName(true);
 		$view->report_by_brand  = $this->getDeviceBrand(true);
+		$view->report_by_browser  = $this->getDeviceBrowser(true);
+		$view->report_by_resolution  = $this->getDeviceResolution(true);
+		$view->report_by_js  = $this->getDeviceJS(true);
+		$view->report_by_flash  = $this->getDeviceFlash(true);
+		$view->report_by_os  = $this->getDeviceOS(true);
+		$view->report_by_ajax  = $this->getDeviceAJAX(true);
 		echo $view->render();
 	}
 	
@@ -114,6 +120,72 @@ class Piwik_MobileAnalytics_Controller extends Piwik_Controller {
 		$column = 'nb_visits';
 		$view->setColumnsToDisplay( array('label',$column) );
 		$view->setColumnTranslation('label', 'Brand Name');
+		$view->setSortedColumn( $column	 );
+		$view->setLimit( 20 );
+		return $this->renderView($view, $fetch);
+	}
+	public function getDeviceBrowser($fetch = false){
+		$view = Piwik_ViewDataTable::factory();
+		$view->init( $this->pluginName,  __FUNCTION__, "MobileAnalytics.".__FUNCTION__ );
+		$this->setPeriodVariablesView($view);
+		$column = 'nb_visits';
+		$view->setColumnsToDisplay( array('label',$column) );
+		$view->setColumnTranslation('label', 'Mobile Browser');
+		$view->setSortedColumn( $column	 );
+		$view->setLimit( 20 );
+		return $this->renderView($view, $fetch);
+	}
+	public function getDeviceResolution($fetch = false){
+		$view = Piwik_ViewDataTable::factory();
+		$view->init( $this->pluginName,  __FUNCTION__, "MobileAnalytics.".__FUNCTION__ );
+		$this->setPeriodVariablesView($view);
+		$column = 'nb_visits';
+		$view->setColumnsToDisplay( array('label',$column) );
+		$view->setColumnTranslation('label', 'Screen Resolution');
+		$view->setSortedColumn( $column	 );
+		$view->setLimit( 20 );
+		return $this->renderView($view, $fetch);
+	}
+	public function getDeviceJS($fetch = false){
+		$view = Piwik_ViewDataTable::factory('graphPie');
+		$view->init( $this->pluginName,  __FUNCTION__, "MobileAnalytics.".__FUNCTION__ );
+		$this->setPeriodVariablesView($view);
+		$column = 'nb_visits';
+		$view->setColumnsToDisplay( array('label',$column) );
+		$view->setColumnTranslation('label', 'JavaScript Support');
+		$view->setSortedColumn( $column	 );
+		$view->setLimit( 10 );
+		return $this->renderView($view, $fetch);
+	}
+	public function getDeviceFlash($fetch = false){
+		$view = Piwik_ViewDataTable::factory('graphPie');
+		$view->init( $this->pluginName,  __FUNCTION__, "MobileAnalytics.".__FUNCTION__ );
+		$this->setPeriodVariablesView($view);
+		$column = 'nb_visits';
+		$view->setColumnsToDisplay( array('label',$column) );
+		$view->setColumnTranslation('label', 'Flash Support');
+		$view->setSortedColumn( $column	 );
+		$view->setLimit( 10 );
+		return $this->renderView($view, $fetch);
+	}
+	public function getDeviceOS($fetch = false){
+		$view = Piwik_ViewDataTable::factory();
+		$view->init( $this->pluginName,  __FUNCTION__, "MobileAnalytics.".__FUNCTION__ );
+		$this->setPeriodVariablesView($view);
+		$column = 'nb_visits';
+		$view->setColumnsToDisplay( array('label',$column) );
+		$view->setColumnTranslation('label', 'Mobile OS');
+		$view->setSortedColumn( $column	 );
+		$view->setLimit( 20 );
+		return $this->renderView($view, $fetch);
+	}
+	public function getDeviceAJAX($fetch = false){
+		$view = Piwik_ViewDataTable::factory('graphPie');
+		$view->init( $this->pluginName,  __FUNCTION__, "MobileAnalytics.".__FUNCTION__ );
+		$this->setPeriodVariablesView($view);
+		$column = 'nb_visits';
+		$view->setColumnsToDisplay( array('label',$column) );
+		$view->setColumnTranslation('label', 'AJAX Support');
 		$view->setSortedColumn( $column	 );
 		$view->setLimit( 20 );
 		return $this->renderView($view, $fetch);

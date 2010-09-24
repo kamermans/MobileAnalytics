@@ -44,6 +44,68 @@ class Piwik_MobileAnalytics_API{
 		$dataTable->queueFilter('ReplaceSummaryRowLabel');
 		return $dataTable;
 	}
+	// Devices by Browser
+	public function getDeviceBrowser( $idSite, $period, $date ){
+		Piwik::checkUserHasViewAccess( $idSite );
+		$archive = Piwik_Archive::build($idSite, $period, $date );
+		$dataTable = $archive->getDataTable('MobileAnalytics_mobileBrowser');
+		$dataTable->filter('Sort', array(Piwik_Archive::INDEX_NB_VISITS));
+		$dataTable->queueFilter('ReplaceColumnNames');
+		$dataTable->queueFilter('ReplaceSummaryRowLabel');
+		return $dataTable;
+	}
+	// Devices by Resolution
+	public function getDeviceResolution( $idSite, $period, $date ){
+		Piwik::checkUserHasViewAccess( $idSite );
+		$archive = Piwik_Archive::build($idSite, $period, $date );
+		$dataTable = $archive->getDataTable('MobileAnalytics_mobileResolution');
+		$dataTable->filter('Sort', array(Piwik_Archive::INDEX_NB_VISITS));
+		$dataTable->queueFilter('ReplaceColumnNames');
+		$dataTable->queueFilter('ReplaceSummaryRowLabel');
+		return $dataTable;
+	}
+	// Devices by JavaScript Support
+	public function getDeviceJS( $idSite, $period, $date ){
+		Piwik::checkUserHasViewAccess( $idSite );
+		$archive = Piwik_Archive::build($idSite, $period, $date );
+		$dataTable = $archive->getDataTable('MobileAnalytics_mobileJS');
+		$dataTable->filter('Sort', array(Piwik_Archive::INDEX_NB_VISITS));
+		$dataTable->queueFilter('ColumnCallbackReplace', array('label', array('Piwik_MobileAnalytics_API','labelBoolSupported')));
+		$dataTable->queueFilter('ReplaceColumnNames');
+		$dataTable->queueFilter('ReplaceSummaryRowLabel');
+		return $dataTable;
+	}
+	// Devices by Flash Support
+	public function getDeviceFlash( $idSite, $period, $date ){
+		Piwik::checkUserHasViewAccess( $idSite );
+		$archive = Piwik_Archive::build($idSite, $period, $date );
+		$dataTable = $archive->getDataTable('MobileAnalytics_mobileFlash');
+		$dataTable->filter('Sort', array(Piwik_Archive::INDEX_NB_VISITS));
+		$dataTable->queueFilter('ReplaceColumnNames');
+		$dataTable->queueFilter('ReplaceSummaryRowLabel');
+		return $dataTable;
+	}
+	// Devices by OS
+	public function getDeviceOS( $idSite, $period, $date ){
+		Piwik::checkUserHasViewAccess( $idSite );
+		$archive = Piwik_Archive::build($idSite, $period, $date );
+		$dataTable = $archive->getDataTable('MobileAnalytics_mobileOS');
+		$dataTable->filter('Sort', array(Piwik_Archive::INDEX_NB_VISITS));
+		$dataTable->queueFilter('ReplaceColumnNames');
+		$dataTable->queueFilter('ReplaceSummaryRowLabel');
+		return $dataTable;
+	}
+	// Devices by AJAX Support
+	public function getDeviceAJAX( $idSite, $period, $date ){
+		Piwik::checkUserHasViewAccess( $idSite );
+		$archive = Piwik_Archive::build($idSite, $period, $date );
+		$dataTable = $archive->getDataTable('MobileAnalytics_mobileAJAX');
+		$dataTable->filter('Sort', array(Piwik_Archive::INDEX_NB_VISITS));
+		$dataTable->queueFilter('ColumnCallbackReplace', array('label', array('Piwik_MobileAnalytics_API','labelBoolSupported')));
+		$dataTable->queueFilter('ReplaceColumnNames');
+		$dataTable->queueFilter('ReplaceSummaryRowLabel');
+		return $dataTable;
+	}
 	// Mobile vs. Non-Mobile
 	public function getDeviceMobile( $idSite, $period, $date ){
 		Piwik::checkUserHasViewAccess( $idSite );
@@ -69,6 +131,9 @@ class Piwik_MobileAnalytics_API{
 				return "Unknown";
 				break;
 		}
+	}
+	public static function labelBoolSupported($in){
+		return ($in)? "Supported": "Unsupported";
 	}
 }
 

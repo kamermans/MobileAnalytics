@@ -19,7 +19,19 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	 * @var TeraWurflRemoteClient
 	 */
 	protected $wurflObj;
-	public static $requiredCapabilities = array('is_wireless_device','brand_name','model_name');
+	public static $requiredCapabilities = array(
+		'is_wireless_device',
+		'brand_name',
+		'model_name',
+		'resolution_width',
+		'resolution_height',
+		'full_flash_support',
+		'flash_lite_version',
+		'mobile_browser',
+		'device_os',
+		'ajax_xhr_type',
+		'ajax_support_javascript',
+	);
 	
 	public function getInformation(){
 		$info = array(
@@ -40,49 +52,28 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 			'Tracker.newVisitorInformation' => 'logMobileInfo',
 			'WidgetsList.add' => 'addWidget',
 			'Menu.add' => 'addMenu',
-			'API.getReportMetadata' => 'getReportMetadata',
+			//'API.getReportMetadata' => 'getReportMetadata',
 			'AdminMenu.add' => 'addAdminMenu'
 		);
 		return $hooks;
 	}
 
-	public function getReportMetadata($notification){
-		$reports = &$notification->getNotificationObject();
-		// Devices by Name
-		$reports[] = array(
-			'category' => 'Mobile Analytics',
-			'name' => 'Mobile Analytics',
-			'module' => 'MobileAnalytics',
-			'action' => 'getDeviceName',
-			'dimension' => 'Mobile Device',
-		);
-		// Devices by Brand
-		$reports[] = array(
-			'category' => 'Mobile Analytics',
-			'name' => 'Mobile Analytics',
-			'module' => 'MobileAnalytics',
-			'action' => 'getDeviceBrand',
-			'dimension' => 'Brand Name',
-		);
-		// Mobile vs. Non-mobile
-		$reports[] = array(
-			'category' => 'Mobile Analytics',
-			'name' => 'Mobile Analytics',
-			'module' => 'MobileAnalytics',
-			'action' => 'getDeviceMobile',
-			'dimension' => 'Mobile',
-		);
-	}
 	
 	function install(){
 		// add columns to the visit table
 		$query = "ALTER IGNORE TABLE `".Piwik_Common::prefixTable('log_visit')."`
-		ADD `mobile` TINYINT( 1 ) NULL,
-		ADD `mobile_brand` VARCHAR( 100 ) NULL,
-		ADD `mobile_model` VARCHAR( 100 ) NULL,
-		ADD `mobile_id` VARCHAR( 64 ) NULL";
+ ADD `mobile` tinyint(1) DEFAULT NULL,
+ ADD `mobile_brand` varchar(100) DEFAULT NULL,
+ ADD `mobile_model` varchar(100) DEFAULT NULL,
+ ADD `mobile_id` varchar(64) DEFAULT NULL,
+ ADD `mobile_browser` varchar(64) DEFAULT NULL,
+ ADD `mobile_resolution` varchar(9) DEFAULT NULL,
+ ADD `mobile_js` tinyint(4) DEFAULT NULL,
+ ADD `mobile_flash` varchar(16) DEFAULT NULL,
+ ADD `mobile_os` varchar(32) DEFAULT NULL,
+ ADD `mobile_ajax` tinyint(4) DEFAULT NULL";
 		
-		// if the column already exist do not throw error. Could be installed twice...
+		// if the column already exists do not throw error. Could be installed twice...
 		try {
 			Piwik_Exec($query);
 		}catch(Exception $e){
@@ -95,14 +86,35 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	
 	function uninstall(){
 		// remove columns from the visit table
-		$query = "ALTER TABLE `".Piwik_Common::prefixTable('log_visit')."` DROP `mobile`, DROP `mobile_brand`, DROP `mobile_model`, DROP `mobile_id`";
+		$query = "ALTER TABLE `".Piwik_Common::prefixTable('log_visit')."`
+ DROP `mobile`,
+ DROP `mobile_brand`,
+ DROP `mobile_model`,
+ DROP `mobile_id`,
+ DROP `mobile_browser`,
+ DROP `mobile_resolution`,
+ DROP `mobile_js`,
+ DROP `mobile_flash`,
+ DROP `mobile_os`,
+ DROP `mobile_ajax`";
 		Piwik_Exec($query);
 	}
 	
 	function addWidget(){
-		Piwik_AddWidget('Mobile Analytics', 'Devices by Model Name', 'MobileAnalytics', 'getDeviceName');
-		Piwik_AddWidget('Mobile Analytics', 'Devices by Brand Name', 'MobileAnalytics', 'getDeviceBrand');
-		Piwik_AddWidget('Mobile Analytics', 'Mobile vs. Desktop', 'MobileAnalytics', 'getDeviceMobile');
+		$widgets = array(
+			'getDeviceMobile'		=> 'Mobile vs. Desktop',
+			'getDeviceName'			=> 'Devices by Model Name',
+			'getDeviceBrand'		=> 'Devices by Brand Name',
+			'getDeviceBrowser'		=> 'Mobile Browsers',
+			'getDeviceResolution'	=> 'Screen Resolutions',
+			'getDeviceJS'			=> 'JavaScript Support',
+			'getDeviceAJAX'			=> 'AJAX Support',
+			'getDeviceFlash'		=> 'Flash Support',
+			'getDeviceOS'			=> 'Operating System',
+		);
+		foreach($widgets as $method=>$label){
+			Piwik_AddWidget('Mobile Analytics', $label, 'MobileAnalytics', $method);
+		}
 	}
 	
 	function addMenu(){
@@ -124,15 +136,15 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	function archivePeriod( $notification ){
 		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
 		$archiveProcessing = $notification->getNotificationObject();
-		// Devices by Name
-		$dataTableToSum = array( 'MobileAnalytics_mobileDevices' );
-		$archiveProcessing->archiveDataTable($dataTableToSum, null, $maximumRowsInDataTable);
-		// Devices by Brand
-		$dataTableToSum = array( 'MobileAnalytics_mobileBrands' );
-		$archiveProcessing->archiveDataTable($dataTableToSum, null, $maximumRowsInDataTable);
-		// Devices by mobile/non-mobile
-		$dataTableToSum = array( 'MobileAnalytics_mobile' );
-		$archiveProcessing->archiveDataTable($dataTableToSum, null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileDevices' ), null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileBrands' ), null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileBrowser' ), null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileResolution' ), null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileJS' ), null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileFlash' ), null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileOS' ), null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileAJAX' ), null, $maximumRowsInDataTable);
+		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobile' ), null, $maximumRowsInDataTable);
 	}
 
 	/**
@@ -140,32 +152,31 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	 */
 	function archiveDay($notification){
 		$archiveProcessing = $notification->getNotificationObject();
-		// Devices by Name
-		$recordName = 'MobileAnalytics_mobileDevices';
-		$labelSQL = "mobile_model";
-		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
-		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
-		$tableProvider->filter('ColumnCallbackDeleteRow', array('label', 'strlen'));
-		$columnToSortByBeforeTruncation = Piwik_Archive::INDEX_NB_VISITS;
-		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
-		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
-		destroy($tableProvider);
-		// Devices by Brand
-		$recordName = 'MobileAnalytics_mobileBrands';
-		$labelSQL = "mobile_brand";
-		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
-		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
-		$tableProvider->filter('ColumnCallbackDeleteRow', array('label', 'strlen'));
-		$columnToSortByBeforeTruncation = Piwik_Archive::INDEX_NB_VISITS;
-		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
-		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
-		destroy($tableProvider);
+		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileDevices', 'mobile_model');
+		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileBrands', 'mobile_brand');
+		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileBrowser', 'mobile_browser');
+		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileResolution', 'mobile_resolution');
+		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileJS', 'mobile_js');
+		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileFlash', 'mobile_flash');
+		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileOS', 'mobile_os');
+		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileAJAX', 'mobile_ajax');
+		
 		// Devices by mobile/non-mobile
 		$recordName = 'MobileAnalytics_mobile';
 		$labelSQL = "mobile";
 		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
 		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
 		$columnToSortByBeforeTruncation = Piwik_Archive::INDEX_NB_VISITS;
+		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
+		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
+		destroy($tableProvider);
+	}
+	
+	protected function archiveGenericMobileData(&$archiveProcessing,$recordName,$labelSQL,$sort_column = Piwik_Archive::INDEX_NB_VISITS){
+		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
+		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
+		$tableProvider->filter('ColumnCallbackDeleteRow', array('label', 'strlen'));
+		$columnToSortByBeforeTruncation = $sort_column;
 		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
 		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
 		destroy($tableProvider);
@@ -183,15 +194,35 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		try {
 			$this->initTeraWurfl();
 			if($this->wurflObj->getDeviceCapability('is_wireless_device')){
+				if($this->wurflObj->getDeviceCapability('full_flash_support')){
+                        $flash = "Flash Player";
+                }elseif(preg_match('/^(\d)/',$this->wurflObj->getDeviceCapability('flash_lite_version'),$matches)){
+                        $flash = "Flash Lite ".$matches[1];
+                }else{
+                        $flash = "None";
+                }
+				
 				$visitorInfo['mobile'] = 1;
+				$visitorInfo['mobile_id'] = $this->wurflObj->capabilities['id'];
 				$visitorInfo['mobile_brand'] = trim($this->wurflObj->getDeviceCapability('brand_name'));
 				$visitorInfo['mobile_model'] = trim($visitorInfo['mobile_brand'] . ' ' . $this->wurflObj->getDeviceCapability('model_name'));
-				$visitorInfo['mobile_id'] = $this->wurflObj->capabilities['id'];
+				$visitorInfo['mobile_browser'] = trim($this->wurflObj->getDeviceCapability('mobile_browser'));
+				$visitorInfo['mobile_resolution'] = $this->wurflObj->getDeviceCapability('resolution_width').'x'.$this->wurflObj->getDeviceCapability('resolution_height');
+				$visitorInfo['mobile_js'] = $this->wurflObj->getDeviceCapability('ajax_support_javascript')? 1:0;
+				$visitorInfo['mobile_flash'] = $flash;
+				$visitorInfo['mobile_os'] = trim($this->wurflObj->getDeviceCapability('device_os'));
+				$visitorInfo['mobile_ajax'] = ($this->wurflObj->getDeviceCapability('ajax_xhr_type') != 'none')? 1:0;
 			}else{
 				$visitorInfo['mobile'] = 0;
+				$visitorInfo['mobile_id'] = $this->wurflObj->capabilities['id'];
 				$visitorInfo['mobile_brand'] = null;
 				$visitorInfo['mobile_model'] = null;
-				$visitorInfo['mobile_id'] = $this->wurflObj->capabilities['id'];
+				$visitorInfo['mobile_browser'] = null;
+				$visitorInfo['mobile_resolution'] = null;
+				$visitorInfo['mobile_js'] = null;
+				$visitorInfo['mobile_flash'] = null;
+				$visitorInfo['mobile_os'] = null;
+				$visitorInfo['mobile_ajax'] = null;
 			}
 		}catch(Exception $e){
 			error_log($e->getMessage());
