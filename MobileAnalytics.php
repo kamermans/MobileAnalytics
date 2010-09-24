@@ -151,6 +151,9 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	 * Daily archive: processes the report Visits by Mobile Device
 	 */
 	function archiveDay($notification){
+		/**
+		 * @var Piwik_ArchiveProcessing_Day
+		 */
 		$archiveProcessing = $notification->getNotificationObject();
 		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileDevices', 'mobile_model');
 		$this->archiveGenericMobileData($archiveProcessing, 'MobileAnalytics_mobileBrands', 'mobile_brand');
@@ -173,9 +176,9 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	}
 	
 	protected function archiveGenericMobileData(&$archiveProcessing,$recordName,$labelSQL,$sort_column = Piwik_Archive::INDEX_NB_VISITS){
-		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
+		$interestByProvider = $this->getMobileArrayInterestForLabel($archiveProcessing, $labelSQL);
 		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
-		$tableProvider->filter('ColumnCallbackDeleteRow', array('label', 'strlen'));
+		//$tableProvider->filter('ColumnCallbackDeleteRow', array('label', 'strlen'));
 		$columnToSortByBeforeTruncation = $sort_column;
 		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
 		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
@@ -227,6 +230,31 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		}catch(Exception $e){
 			error_log($e->getMessage());
 		}
+	}
+	
+	public function getMobileArrayInterestForLabel(&$archiveProcessing,$label){
+		$query = "SELECT 	$label as label,
+							count(distinct visitor_idcookie) as nb_uniq_visitors, 
+							count(*) as nb_visits,
+							sum(visit_total_actions) as nb_actions, 
+							max(visit_total_actions) as max_actions, 
+							sum(visit_total_time) as sum_visit_length,
+							sum(case visit_total_actions when 1 then 1 else 0 end) as bounce_count,
+							sum(case visit_goal_converted when 1 then 1 else 0 end) as nb_visits_converted
+				FROM ".$archiveProcessing->logTable."
+				WHERE visit_last_action_time >= ?
+						AND visit_last_action_time <= ?
+						AND idsite = ?
+						AND mobile = 1
+				GROUP BY label
+				ORDER BY nb_visits DESC";
+		$query = $archiveProcessing->db->query($query, array( $archiveProcessing->getStartDatetimeUTC(), $archiveProcessing->getEndDatetimeUTC(), $archiveProcessing->idsite ));
+		$interest = array();
+		while($row = $query->fetch()){
+			if(!isset($interest[$row['label']])) $interest[$row['label']]= $archiveProcessing->getNewInterestRow();
+			$archiveProcessing->updateInterestStats( $row, $interest[$row['label']]);
+		}
+		return $interest;
 	}
 	
 	protected function initTeraWurfl(){
