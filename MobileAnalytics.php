@@ -71,7 +71,8 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
  ADD `mobile_js` tinyint(4) DEFAULT NULL,
  ADD `mobile_flash` varchar(16) DEFAULT NULL,
  ADD `mobile_os` varchar(32) DEFAULT NULL,
- ADD `mobile_ajax` tinyint(4) DEFAULT NULL";
+ ADD `mobile_ajax` tinyint(4) DEFAULT NULL,
+ ADD KEY `index_mobile` (`mobile`)";
 		
 		// if the column already exists do not throw error. Could be installed twice...
 		try {
@@ -96,7 +97,8 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
  DROP `mobile_js`,
  DROP `mobile_flash`,
  DROP `mobile_os`,
- DROP `mobile_ajax`";
+ DROP `mobile_ajax`
+ DROP KEY `index_mobile`";
 		Piwik_Exec($query);
 	}
 	
