@@ -236,7 +236,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	
 	public function getMobileArrayInterestForLabel(&$archiveProcessing,$label){
 		$query = "SELECT 	$label as label,
-							count(distinct visitor_idcookie) as nb_uniq_visitors, 
+							count(distinct idvisitor) as nb_uniq_visitors, 
 							count(*) as nb_visits,
 							sum(visit_total_actions) as nb_actions, 
 							max(visit_total_actions) as max_actions, 
