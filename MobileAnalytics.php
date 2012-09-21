@@ -136,7 +136,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	}
 
 	function archivePeriod( $notification ){
-		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
+		$maximumRowsInDataTable = Piwik_Config::getInstance()->General['datatable_archiving_maximum_rows_standard'];
 		$archiveProcessing = $notification->getNotificationObject();
 		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileDevices' ), null, $maximumRowsInDataTable);
 		$archiveProcessing->archiveDataTable(array( 'MobileAnalytics_mobileBrands' ), null, $maximumRowsInDataTable);
@@ -172,7 +172,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		$interestByProvider = $archiveProcessing->getArrayInterestForLabel($labelSQL);
 		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
 		$columnToSortByBeforeTruncation = Piwik_Archive::INDEX_NB_VISITS;
-		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
+		$maximumRowsInDataTable = Piwik_Config::getInstance()->General['datatable_archiving_maximum_rows_standard'];
 		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
 		destroy($tableProvider);
 	}
@@ -182,7 +182,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		$tableProvider = $archiveProcessing->getDataTableFromArray($interestByProvider);
 		//$tableProvider->filter('ColumnCallbackDeleteRow', array('label', 'strlen'));
 		$columnToSortByBeforeTruncation = $sort_column;
-		$maximumRowsInDataTable = Zend_Registry::get('config')->General->datatable_archiving_maximum_rows_standard;
+		$maximumRowsInDataTable = Piwik_Config::getInstance()->General['datatable_archiving_maximum_rows_standard'];
 		$archiveProcessing->insertBlobRecord($recordName, $tableProvider->getSerialized($maximumRowsInDataTable, null, $columnToSortByBeforeTruncation));
 		destroy($tableProvider);
 	}
@@ -198,6 +198,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		$visitorInfo =& $notification->getNotificationObject();
 		try {
 			$this->initTeraWurfl();
+
 			if($this->wurflObj->getDeviceCapability('is_wireless_device')){
 				if($this->wurflObj->getDeviceCapability('full_flash_support')){
                         $flash = "Flash Player";
@@ -293,14 +294,14 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 		$out .= '</div>';
 	}
 	public static function trackerGetSetting($name){
-		return Piwik_Tracker_Config::getInstance()->MobileAnalytics[$name];
+		return Piwik_Config::getInstance()->MobileAnalytics[$name];
 	}
 	/**
 	 * Check if the MobileAnalytics settings exist
 	 * @return bool MobileAnalytics settings exist
 	 */
 	public static function settingsExist(){
-		if(!@isset(Zend_Registry::get('config')->MobileAnalytics->TeraWurflMode)){
+		if(!@isset(Piwik_Config::getInstance()->MobileAnalytics['TeraWurflMode'])){
 			return false;
 		}
 		return true;
@@ -310,7 +311,7 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	 * @return void
 	 */
 	public static function createSettings(){
-		$config = Zend_Registry::get('config');
+		$config = Piwik_Config::getInstance();
 		$config->MobileAnalytics = array(
 			"TeraWurflURL"=>"http://yourserver/Tera-WURFL/webservice.php",
 			"TeraWurflPath"=>"/var/www/html/TeraWurfl/TeraWurfl.php",
@@ -322,12 +323,10 @@ class Piwik_MobileAnalytics extends Piwik_Plugin{
 	
 	public static function saveSetting($name,$value){
 		if(!self::settingsExist()) self::createSettings();
-		$config = Zend_Registry::get('config');
-		$mobile = $config->MobileAnalytics->toArray();
-		$mobile[$name] = $value;
-		$config->MobileAnalytics = $mobile;
-		$config->__destruct();
-		Piwik::createConfigObject();
+		$mobileConfig = Piwik_Config::getInstance()->MobileAnalytics;
+		$mobileConfig[$name] = $value;
+		Piwik_Config::getInstance()->MobileAnalytics = $mobileConfig;
+		Piwik_Config::getInstance()->forceSave();
 	}
 
 }
