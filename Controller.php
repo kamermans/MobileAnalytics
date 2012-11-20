@@ -50,7 +50,7 @@ class Piwik_MobileAnalytics_Controller extends Piwik_Controller {
 		Piwik::checkUserIsSuperUser();
 		$view = Piwik_View::factory('settings');
 		if(!Piwik_MobileAnalytics::settingsExist()) Piwik_MobileAnalytics::createSettings();
-		$view->config = Zend_Registry::get('config')->MobileAnalytics->toArray();
+		$view->config = Piwik_Config::getInstance()->MobileAnalytics;
 		$this->setBasicVariablesView($view);
 		$view->topMenu = Piwik_GetTopMenu();
 		$view->menu = Piwik_GetAdminMenu();
